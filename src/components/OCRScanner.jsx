@@ -146,8 +146,8 @@ const OCRScanner = ({ onScanComplete }) => {
                                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M12 4v16m8-8H4"></path>
                                 </svg>
                             </div>
-                            <p className="mb-1 text-sm text-slate-600 font-bold">Select Odometer Photo</p>
-                            <p className="text-xs text-slate-400 font-medium italic">JPG, PNG supported</p>
+                            <p className="mb-1 text-sm text-slate-600 font-bold p-4">Select Odometer Photo</p>
+                            <p className="text-xs text-slate-400 font-medium italic p-4">JPG, PNG supported</p>
                         </div>
                         <input type="file" className="hidden" accept="image/*" onChange={onSelectFile} />
                     </label>
@@ -174,12 +174,12 @@ const OCRScanner = ({ onScanComplete }) => {
 
                         <div className="flex flex-col sm:flex-row gap-4">
                             <button
-                                className={`btn btn-primary btn-lg flex-1 rounded-2xl shadow-lg shadow-primary/20 border-none transition-all active:scale-[0.98] ${loading ? 'btn-disabled' : ''}`}
+                                className={`btn btn-primary btn-lg flex-1 rounded-2xl shadow-lg shadow-primary/20 border-none transition-all active:scale-[0.98] p-4 ${loading ? 'btn-disabled' : ''}`}
                                 onClick={handleProcessOCR}
                                 disabled={!imageSrc || loading}
                             >
                                 {loading ? (
-                                    <div className="flex items-center gap-3">
+                                    <div className="flex items-center gap-3 p-4">
                                         <span className="loading loading-spinner loading-md"></span>
                                         <span className="font-bold tracking-wide italic">Analyzing {progress}%</span>
                                     </div>
@@ -193,8 +193,8 @@ const OCRScanner = ({ onScanComplete }) => {
                                 )}
                             </button>
                             {imageSrc && !loading && (
-                                <button className="btn btn-ghost btn-lg rounded-2xl text-slate-400" onClick={() => setImageSrc(null)}>
-                                    Clear
+                                <button className="btn btn-ghost btn-lg rounded-2xl text-slate-400 p-4" onClick={() => setImageSrc(null)}>
+                                    <span className="p-4">Clear</span>
                                 </button>
                             )}
                         </div>

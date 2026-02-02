@@ -44,16 +44,16 @@ function App() {
           <div className="flex justify-center mb-8">
             <div className="tabs tabs-boxed bg-slate-200/50 p-1.5 rounded-2xl border border-slate-200">
               <button
-                className={`tab tab-lg rounded-xl h-12 font-bold transition-all px-8 ${activeTab === 'bbm' ? 'tab-active bg-white text-primary shadow-sm' : 'text-slate-500'}`}
+                className={`tab tab-lg rounded-xl h-14 font-bold transition-all px-8 p-4 ${activeTab === 'bbm' ? 'tab-active bg-white text-primary shadow-sm' : 'text-slate-500'}`}
                 onClick={() => setActiveTab('bbm')}
               >
-                ⛽ Fuel Log
+                <span className="p-4">⛽ Fuel Log</span>
               </button>
               <button
-                className={`tab tab-lg rounded-xl h-12 font-bold transition-all px-8 ${activeTab === 'oli' ? 'tab-active bg-white text-secondary shadow-sm' : 'text-slate-500'}`}
+                className={`tab tab-lg rounded-xl h-14 font-bold transition-all px-8 p-4 ${activeTab === 'oli' ? 'tab-active bg-white text-secondary shadow-sm' : 'text-slate-500'}`}
                 onClick={() => setActiveTab('oli')}
               >
-                🛢️ Oil Log
+                <span className="p-4">🛢️ Oil Log</span>
               </button>
             </div>
           </div>

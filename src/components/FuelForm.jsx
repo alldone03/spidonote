@@ -16,10 +16,10 @@ const FuelForm = ({ scannedKm, activeType = 'bbm' }) => {
         }
     });
 
-    // Handle tab switch - update type but keep common fields
-    useEffect(() => {
-        // Reset doesn't change common fields like tanggal and kilometer
-    }, [activeType]);
+    const [showAuth, setShowAuth] = React.useState(false);
+    const [password, setPassword] = React.useState("");
+    const [pendingData, setPendingData] = React.useState(null);
+    const [isSyncing, setIsSyncing] = React.useState(false);
 
     useEffect(() => {
         if (scannedKm) {
@@ -27,7 +27,19 @@ const FuelForm = ({ scannedKm, activeType = 'bbm' }) => {
         }
     }, [scannedKm, setValue]);
 
-    const onSubmit = async (data) => {
+    const onSubmit = (data) => {
+        setPendingData(data);
+        setShowAuth(true);
+    };
+
+    const executeSync = async () => {
+        if (password !== "cintamesin") {
+            alert("Password Salah! ❌");
+            return;
+        }
+
+        setIsSyncing(true);
+        const data = pendingData;
         const GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzZfDz7TmytH0pVH_fiaquHKquSabIn0okZsm3bwSKUexlN37OtYwCkKeTivFwx05Qr/exec";
 
         let payload = {
@@ -59,8 +71,8 @@ const FuelForm = ({ scannedKm, activeType = 'bbm' }) => {
             });
 
             localStorage.setItem('last_odometer', data.kilometer);
-            alert(`Data ${activeType.toUpperCase()} berhasil disimpan!`);
-            // Optionally reset specific fields after success
+            alert(`Data ${activeType.toUpperCase()} berhasil disimpan! ✅`);
+
             if (activeType === 'bbm') {
                 setValue('liter', '');
                 setValue('harga', '');
@@ -68,9 +80,13 @@ const FuelForm = ({ scannedKm, activeType = 'bbm' }) => {
                 setValue('jenis_oli', '');
                 setValue('catatan', '');
             }
+            setShowAuth(false);
+            setPassword("");
         } catch (error) {
             console.error("Submission Error:", error);
             alert("Gagal menyimpan data. Periksa koneksi atau konfigurasi script.");
+        } finally {
+            setIsSyncing(false);
         }
     };
 
@@ -107,19 +123,23 @@ const FuelForm = ({ scannedKm, activeType = 'bbm' }) => {
 
             <div className="p-6 sm:p-8">
                 <form onSubmit={handleSubmit(onSubmit)} className="space-y-6 sm:space-y-8">
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6 sm:gap-8">
-                        <div className="form-control w-full uppercase">
-                            <label className="label-text mb-2.5 font-black text-[10px] tracking-[0.2em] text-slate-400 ml-1">Date</label>
-                            <input
-                                type="date"
-                                {...register("tanggal", { required: true })}
-                                className="input h-14 w-full bg-slate-50 border-slate-200 rounded-2xl p-4 focus:bg-white focus:ring-4 focus:ring-primary/10 transition-all font-bold text-slate-700"
-                            />
+                    <div className="grid grid-cols-1 gap-6 sm:gap-8">
+                        {/* Date field */}
+                        <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4">
+                            <label className="sm:w-40 label-text font-black text-[10px] tracking-[0.2em] text-slate-400 uppercase">Date</label>
+                            <div className="flex-1">
+                                <input
+                                    type="date"
+                                    {...register("tanggal", { required: true })}
+                                    className="input h-14 w-full bg-slate-50 border-slate-200 rounded-2xl p-4 focus:bg-white focus:ring-4 focus:ring-primary/10 transition-all font-bold text-slate-700"
+                                />
+                            </div>
                         </div>
 
-                        <div className="form-control w-full uppercase">
-                            <label className="label-text mb-2.5 font-black text-[10px] tracking-[0.2em] text-slate-400 ml-1">Current Odometer (KM)</label>
-                            <div className="relative group">
+                        {/* Current Odometer field */}
+                        <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4">
+                            <label className="sm:w-40 label-text font-black text-[10px] tracking-[0.2em] text-slate-400 uppercase">Current odometer</label>
+                            <div className="flex-1 relative group">
                                 <input
                                     type="number"
                                     placeholder="Enter mileage"
@@ -138,34 +158,38 @@ const FuelForm = ({ scannedKm, activeType = 'bbm' }) => {
                     {/* Conditional Fields Based on Type */}
                     {activeType === 'bbm' ? (
                         <div className="space-y-6 sm:space-y-8 animate-in fade-in duration-500">
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 sm:gap-8">
-                                <div className="form-control w-full uppercase">
-                                    <label className="label-text mb-2.5 font-black text-[10px] tracking-[0.2em] text-slate-400 ml-1">Previous Odometer</label>
-                                    <input
-                                        type="number"
-                                        placeholder="Last session KM"
-                                        {...register("prev_kilometer")}
-                                        className="input h-14 bg-slate-50 border-slate-200 rounded-2xl p-4 w-full font-bold text-slate-600 italic"
-                                    />
+                            <div className="grid grid-cols-1 gap-6 sm:gap-8">
+                                <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4">
+                                    <label className="sm:w-40 label-text font-black text-[10px] tracking-[0.2em] text-slate-400 uppercase">Previous Odometer</label>
+                                    <div className="flex-1">
+                                        <input
+                                            type="number"
+                                            placeholder="Last session KM"
+                                            {...register("prev_kilometer")}
+                                            className="input h-14 bg-slate-50 border-slate-200 rounded-2xl p-4 w-full font-bold text-slate-600 italic"
+                                        />
+                                    </div>
                                 </div>
-                                <div className="grid grid-cols-2 gap-4">
-                                    <div className="form-control w-full uppercase">
-                                        <label className="label-text mb-2.5 font-black text-[10px] tracking-[0.2em] text-slate-400 ml-1">Volume (L)</label>
+                                <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4">
+                                    <label className="sm:w-40 label-text font-black text-[10px] tracking-[0.2em] text-slate-400 uppercase">Volume (L)</label>
+                                    <div className="flex-1">
                                         <input
                                             type="number"
                                             step="0.01"
                                             placeholder="0.00"
                                             {...register("liter", { required: true })}
-                                            className="input h-14 bg-slate-50 border-slate-200 p-4 rounded-2xl font-black text-slate-800 placeholder:text-slate-300"
+                                            className="input h-14 w-full bg-slate-50 border-slate-200 p-4 rounded-2xl font-black text-slate-800 placeholder:text-slate-300"
                                         />
                                     </div>
-                                    <div className="form-control w-full uppercase">
-                                        <label className="label-text mb-2.5 font-black text-[10px] tracking-[0.2em] text-slate-400 ml-1">Total (IDR)</label>
+                                </div>
+                                <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4">
+                                    <label className="sm:w-40 label-text font-black text-[10px] tracking-[0.2em] text-slate-400 uppercase">Total (IDR)</label>
+                                    <div className="flex-1">
                                         <input
                                             type="number"
                                             placeholder="0"
                                             {...register("harga", { required: true })}
-                                            className="input h-14 bg-slate-50 border-slate-200 p-4 rounded-2xl font-black text-slate-800 placeholder:text-slate-300"
+                                            className="input h-14 w-full bg-slate-50 border-slate-200 p-4 rounded-2xl font-black text-slate-800 placeholder:text-slate-300"
                                         />
                                     </div>
                                 </div>
@@ -192,35 +216,41 @@ const FuelForm = ({ scannedKm, activeType = 'bbm' }) => {
                         </div>
                     ) : (
                         <div className="space-y-6 sm:space-y-8 animate-in slide-in-from-right-4 duration-500">
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 sm:gap-8">
-                                <div className="form-control w-full uppercase">
-                                    <label className="label-text mb-2.5 font-black text-[10px] tracking-[0.2em] text-slate-400 ml-1">Jenis Oli</label>
-                                    <input
-                                        type="text"
-                                        placeholder="Contoh: Shell Advance 10W-40"
-                                        {...register("jenis_oli", { required: activeType === 'oli' })}
-                                        className="input h-14 bg-slate-50 border-slate-200 p-4 rounded-2xl font-bold text-slate-800 placeholder:text-slate-300"
-                                    />
+                            <div className="grid grid-cols-1 gap-6 sm:gap-8">
+                                <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4">
+                                    <label className="sm:w-40 label-text font-black text-[10px] tracking-[0.2em] text-slate-400 uppercase">Jenis Oli</label>
+                                    <div className="flex-1">
+                                        <input
+                                            type="text"
+                                            placeholder="Contoh: Shell Advance 10W-40"
+                                            {...register("jenis_oli", { required: activeType === 'oli' })}
+                                            className="input h-14 w-full bg-slate-50 border-slate-200 p-4 rounded-2xl font-bold text-slate-800 placeholder:text-slate-300"
+                                        />
+                                    </div>
                                 </div>
-                                <div className="form-control w-full uppercase">
-                                    <label className="label-text mb-2.5 font-black text-[10px] tracking-[0.2em] text-slate-400 ml-1">Aksi Maintenance</label>
-                                    <select
-                                        {...register("aksi")}
-                                        className="select h-14 bg-slate-50 border-slate-200 rounded-2xl font-bold text-slate-800"
-                                    >
-                                        <option value="Ganti">🔄 Ganti Baru</option>
-                                        <option value="Cek">🔍 Pengecekan</option>
-                                        <option value="Tambah">➕ Penambahan</option>
-                                    </select>
+                                <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4">
+                                    <label className="sm:w-40 label-text font-black text-[10px] tracking-[0.2em] text-slate-400 uppercase">Aksi Maintenance</label>
+                                    <div className="flex-1">
+                                        <select
+                                            {...register("aksi")}
+                                            className="select h-14 w-full bg-slate-50 border-slate-200 rounded-2xl font-bold text-slate-800"
+                                        >
+                                            <option value="Ganti">🔄 Ganti Baru</option>
+                                            <option value="Cek">🔍 Pengecekan</option>
+                                            <option value="Tambah">➕ Penambahan</option>
+                                        </select>
+                                    </div>
                                 </div>
                             </div>
-                            <div className="form-control w-full uppercase">
-                                <label className="label-text mb-2.5 font-black text-[10px] tracking-[0.2em] text-slate-400 ml-1">Catatan</label>
-                                <textarea
-                                    placeholder="Catatan tambahan..."
-                                    {...register("catatan")}
-                                    className="textarea bg-slate-50 border-slate-200 rounded-2xl p-4 font-medium text-slate-700 h-24"
-                                />
+                            <div className="flex flex-col sm:flex-row gap-2 sm:gap-4">
+                                <label className="sm:w-40 label-text font-black text-[10px] tracking-[0.2em] text-slate-400 uppercase">Catatan</label>
+                                <div className="flex-1">
+                                    <textarea
+                                        placeholder="Catatan tambahan..."
+                                        {...register("catatan")}
+                                        className="textarea w-full bg-slate-50 border-slate-200 rounded-2xl p-4 font-medium text-slate-700 h-24"
+                                    />
+                                </div>
                             </div>
                         </div>
                     )}
@@ -228,7 +258,7 @@ const FuelForm = ({ scannedKm, activeType = 'bbm' }) => {
                     <div className="flex flex-col sm:flex-row items-center justify-end gap-6 pt-6">
                         <button
                             type="submit"
-                            className={`btn btn-lg sm:w-auto w-full px-16 rounded-2xl shadow-xl transition-all active:scale-[0.98] border-none font-black tracking-tight uppercase ${activeType === 'oli' ? 'btn-secondary shadow-secondary/20' : 'btn-primary shadow-primary/20'} ${isSubmitting ? 'btn-disabled' : ''}`}
+                            className={`btn btn-lg sm:w-auto w-full p-4 px-16 rounded-2xl shadow-xl transition-all active:scale-[0.98] border-none font-black tracking-tight uppercase ${activeType === 'oli' ? 'btn-secondary shadow-secondary/20' : 'btn-primary shadow-primary/20'} ${isSubmitting ? 'btn-disabled' : ''}`}
                             disabled={isSubmitting}
                         >
                             {isSubmitting ? (
@@ -241,13 +271,63 @@ const FuelForm = ({ scannedKm, activeType = 'bbm' }) => {
                                     <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7" />
                                     </svg>
-                                    <span>Sync to Cloud</span>
+                                    <span className="p-4">Sync to Cloud</span>
                                 </div>
                             )}
                         </button>
                     </div>
                 </form>
             </div>
+
+            {/* Password Modal */}
+            {showAuth && (
+                <div className="modal modal-open modal-bottom sm:modal-middle bg-slate-900/60 transition-all">
+                    <div className="modal-box bg-white border border-slate-100 rounded-[2rem] p-8 shadow-2xl">
+                        <div className="flex flex-col items-center text-center">
+                            <div className="w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center text-primary mb-4">
+                                <svg xmlns="http://www.w3.org/2000/svg" className="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+                                </svg>
+                            </div>
+                            <h3 className="text-2xl font-black text-slate-800 tracking-tight mb-2">Sync Confirmation</h3>
+                            <p className="text-slate-500 font-medium mb-8">Enter the master password to sync data to the cloud.</p>
+
+                            <div className="form-control w-full mb-6">
+                                <input
+                                    type="password"
+                                    placeholder="Enter password..."
+                                    className="input input-lg bg-slate-50 border-slate-200 rounded-2xl w-full text-center font-bold tracking-[0.3em] focus:bg-white focus:ring-4 focus:ring-primary/10"
+                                    value={password}
+                                    onChange={(e) => setPassword(e.target.value)}
+                                    autoFocus
+                                    onKeyDown={(e) => {
+                                        if (e.key === 'Enter') executeSync();
+                                        if (e.key === 'Escape') setShowAuth(false);
+                                    }}
+                                />
+                            </div>
+
+                            <div className="flex flex-col sm:flex-row gap-3 w-full">
+                                <button
+                                    className={`btn btn-primary btn-lg flex-1 rounded-2xl shadow-xl shadow-primary/20 hover:scale-[1.02] active:scale-[0.98] transition-all font-black uppercase text-sm p-4 ${isSyncing ? 'btn-disabled' : ''}`}
+                                    onClick={executeSync}
+                                >
+                                    {isSyncing ? <span className="loading loading-spinner"></span> : <span className="p-4">Verify & Sync</span>}
+                                </button>
+                                <button
+                                    className="btn btn-ghost btn-lg flex-1 rounded-2xl text-slate-400 font-bold uppercase text-xs p-4"
+                                    onClick={() => {
+                                        setShowAuth(false);
+                                        setPassword("");
+                                    }}
+                                >
+                                    <span className="p-4">Cancel</span>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            )}
         </div>
     );
 };
