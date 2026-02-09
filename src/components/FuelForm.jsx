@@ -70,7 +70,9 @@ const FuelForm = ({ scannedKm, activeType = 'bbm' }) => {
                 }
             });
 
-            localStorage.setItem('last_odometer', data.kilometer);
+            if (activeType === 'bbm') {
+                localStorage.setItem('last_odometer', data.kilometer);
+            }
             alert(`Data ${activeType.toUpperCase()} berhasil disimpan! ✅`);
 
             if (activeType === 'bbm') {
