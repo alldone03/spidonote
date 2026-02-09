@@ -33,7 +33,8 @@ const FuelForm = ({ scannedKm, activeType = 'bbm' }) => {
     };
 
     const executeSync = async () => {
-        if (password !== "cintamesin") {
+        const APP_PASSWORD = import.meta.env.VITE_APP_PASSWORD || "mesinbalap";
+        if (password !== APP_PASSWORD) {
             alert("Password Salah! ❌");
             return;
         }
