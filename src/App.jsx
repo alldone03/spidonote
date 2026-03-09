@@ -24,7 +24,7 @@ function App() {
               <span className="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse"></span>
               System Online
             </div>
-            <span className="badge badge-primary badge-outline font-bold px-3 py-2">v1.2.0</span>
+            <span className="badge badge-primary badge-outline font-bold px-3 py-2"><v1 className="2 1"></v1></span>
           </div>
         </div>
       </header>
