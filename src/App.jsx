@@ -1,10 +1,39 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import OCRScanner from './components/OCRScanner';
 import FuelForm from './components/FuelForm';
+import { getPendingSyncCount, syncData } from './utils/syncManager';
 
 function App() {
   const [scannedKm, setScannedKm] = useState("");
   const [activeTab, setActiveTab] = useState("bbm");
+  const [isOnline, setIsOnline] = useState(navigator.onLine);
+  const [pendingCount, setPendingCount] = useState(0);
+
+  useEffect(() => {
+    const handleStatusChange = () => {
+      setIsOnline(navigator.onLine);
+      if (navigator.onLine) {
+        syncData().then(() => updatePendingCount());
+      }
+    };
+
+    const updatePendingCount = async () => {
+      const count = await getPendingSyncCount();
+      setPendingCount(count);
+    };
+
+    window.addEventListener('online', handleStatusChange);
+    window.addEventListener('offline', handleStatusChange);
+    window.addEventListener('sync-update', updatePendingCount);
+
+    updatePendingCount();
+
+    return () => {
+      window.removeEventListener('online', handleStatusChange);
+      window.removeEventListener('offline', handleStatusChange);
+      window.removeEventListener('sync-update', updatePendingCount);
+    };
+  }, []);
 
   return (
     <div className="min-h-screen bg-slate-50 text-slate-900 font-sans selection:bg-primary/20" data-theme="winter">
@@ -20,23 +49,28 @@ function App() {
             <span className="text-xl font-extrabold tracking-tight text-slate-900">SpidoNote</span>
           </div>
           <div className="flex items-center gap-4">
-            <div className="hidden sm:flex items-center gap-1.5 px-3 py-1 bg-slate-100 rounded-full border border-slate-200 text-xs font-semibold text-slate-600">
-              <span className="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse"></span>
-              System Online
+            <div className={`flex items-center gap-1.5 px-3 py-1 rounded-full border text-xs font-semibold transition-all ${isOnline ? 'bg-green-50 border-green-200 text-green-600' : 'bg-red-50 border-red-200 text-red-600'}`}>
+              <span className={`w-1.5 h-1.5 rounded-full ${isOnline ? 'bg-green-500 animate-pulse' : 'bg-red-500'}`}></span>
+              {isOnline ? 'Online' : 'Offline'}
             </div>
-            <span className="badge badge-primary badge-outline font-bold px-3 py-2"><v1 className="2 1"></v1></span>
+            {pendingCount > 0 && (
+              <div className="flex items-center gap-1.5 px-3 py-1 bg-amber-50 border border-amber-200 text-amber-600 rounded-full text-xs font-bold animate-bounce">
+                <span>{pendingCount} Pending</span>
+              </div>
+            )}
+            <span className="badge badge-primary badge-outline font-bold px-3 py-2">v1.2.1</span>
           </div>
         </div>
       </header>
 
       <main className="max-w-4xl mx-auto px-4 py-8 md:py-12">
         <div className="max-w-2xl mx-auto">
-          <header className="mb-8 text-center">
+          <header className="mb-8 text-center text-balance">
             <h1 className="text-4xl font-extrabold tracking-tight text-slate-900 sm:text-5xl mb-3">
               Vehicle Health <span className="text-primary italic">Sync</span>
             </h1>
             <p className="text-base text-slate-500 font-medium leading-relaxed">
-              Automated OCR logs for fuel & maintenance maintenance.
+              Automated OCR logs for fuel & oil maintenance. {!isOnline && <span className="text-red-500 font-bold">(Modus Offline Aktif)</span>}
             </p>
           </header>
 

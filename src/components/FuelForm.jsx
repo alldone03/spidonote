@@ -1,6 +1,7 @@
 import React, { useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import axios from 'axios';
+import { queueForSync } from '../utils/syncManager';
 
 const FuelForm = ({ scannedKm, activeType = 'bbm' }) => {
     const { register, handleSubmit, setValue, watch, reset, formState: { isSubmitting } } = useForm({
@@ -41,7 +42,6 @@ const FuelForm = ({ scannedKm, activeType = 'bbm' }) => {
 
         setIsSyncing(true);
         const data = pendingData;
-        const GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzZfDz7TmytH0pVH_fiaquHKquSabIn0okZsm3bwSKUexlN37OtYwCkKeTivFwx05Qr/exec";
 
         let payload = {
             type: activeType,
@@ -65,29 +65,50 @@ const FuelForm = ({ scannedKm, activeType = 'bbm' }) => {
         }
 
         try {
-            await axios.post(GOOGLE_SCRIPT_URL, JSON.stringify(payload), {
-                headers: {
-                    "Content-Type": "text/plain;charset=utf-8"
-                }
-            });
+            if (!navigator.onLine) {
+                // Offline mode: Queue for later
+                await queueForSync(payload);
+                alert(`Anda sedang offline. Data ${activeType.toUpperCase()} disimpan secara lokal dan akan di-sync otomatis saat internet kembali. 📁`);
+            } else {
+                // Online mode: Send immediately
+                const GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzZfDz7TmytH0pVH_fiaquHKquSabIn0okZsm3bwSKUexlN37OtYwCkKeTivFwx05Qr/exec";
+                await axios.post(GOOGLE_SCRIPT_URL, JSON.stringify(payload), {
+                    headers: {
+                        "Content-Type": "text/plain;charset=utf-8"
+                    }
+                });
+                alert(`Data ${activeType.toUpperCase()} berhasil disimpan! ✅`);
+            }
 
             if (activeType === 'bbm') {
                 localStorage.setItem('last_odometer', data.kilometer);
-            }
-            alert(`Data ${activeType.toUpperCase()} berhasil disimpan! ✅`);
-
-            if (activeType === 'bbm') {
                 setValue('liter', '');
                 setValue('harga', '');
             } else {
                 setValue('jenis_oli', '');
                 setValue('catatan', '');
             }
+
             setShowAuth(false);
             setPassword("");
+            reset({
+                ...data,
+                prev_kilometer: activeType === 'bbm' ? data.kilometer : data.prev_kilometer,
+                kilometer: '',
+                liter: '',
+                harga: '',
+                jenis_oli: '',
+                catatan: ''
+            });
+
+            // Trigger global sync count update (optional, but good for UI)
+            window.dispatchEvent(new CustomEvent('sync-update'));
+
         } catch (error) {
             console.error("Submission Error:", error);
-            alert("Gagal menyimpan data. Periksa koneksi atau konfigurasi script.");
+            alert("Gagal menyimpan data. Tersimpan dalam antrean lokal (jika mungkin).");
+            await queueForSync(payload);
+            window.dispatchEvent(new CustomEvent('sync-update'));
         } finally {
             setIsSyncing(false);
         }
